@@ -6,6 +6,7 @@ import (
 	"bitbucket.org/Aleksqew/test-task/api-gateway/application/services"
 	"bitbucket.org/Aleksqew/test-task/api-gateway/infrastructure/configs"
 	"net/http"
+	"github.com/go-playground/validator"
 )
 import "github.com/labstack/echo"
 
@@ -18,13 +19,14 @@ type Api struct {
 func (api *Api) Init() {
 	api.echo = echo.New()
 	api.RegisterRouteBase()
+	api.echo.Validator = &CustomValidator{validator: validator.New()}
 	api.echo.Start(":" + api.echoConfig.GetPort())
 }
 
 func (api *Api) RegisterRouteBase() {
 	api.echo.GET("/api/ping", api.ping)
 	api.echo.POST("/api/todo", api.todoCreate)
-	api.echo.GET("/api/todo", api.todoGet)
+	api.echo.GET("/api/todo/:id", api.todoGet)
 }
 
 func (api *Api) ping(c echo.Context) error {
@@ -36,6 +38,9 @@ func (api *Api) todoCreate(c echo.Context) error {
 	if err := c.Bind(requestCreateTodo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, api.generateErrorResponse(err))
 	}
+	if err := c.Validate(requestCreateTodo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, api.generateErrorResponse(err))
+	}
 	response, err := api.serviceApi.CreateTodo(*requestCreateTodo)
 	if err != nil {
 		return err
@@ -44,11 +49,7 @@ func (api *Api) todoCreate(c echo.Context) error {
 }
 
 func (api *Api) todoGet(c echo.Context) error {
-	requestGetTodo := new(requests.GetTodoDto)
-	if err := c.Bind(requestGetTodo); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, api.generateErrorResponse(err))
-	}
-	response, err := api.serviceApi.GetTodo(*requestGetTodo)
+	response, err := api.serviceApi.GetTodo(c.Param("id"))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, api.generateErrorResponse(err))
 	}
@@ -81,4 +82,16 @@ func (api *Api) SetEchoConfig(config configs.EchoConfig) {
 
 func (api *Api) SetServiceApi(serviceApi services.ServiceApi) {
 	api.serviceApi = serviceApi
+}
+
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+		// Optionally, you could return the error to give each route more control over the status code
+		return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+	}
+	return nil
 }

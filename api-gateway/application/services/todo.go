@@ -30,8 +30,8 @@ func (serviceApi *ServiceApi) CreateTodo(requestDto requests.CreateTodoDto) (res
 	return resp, nil
 }
 
-func (serviceApi *ServiceApi) GetTodo(requestDto requests.GetTodoDto) (responses.TodoDto, error) {
-	todo, err := serviceApi.todoRepository.GetTodo(requestDto.Id)
+func (serviceApi *ServiceApi) GetTodo(id string) (responses.TodoDto, error) {
+	todo, err := serviceApi.todoRepository.GetTodo(id)
 	if err != nil {
 		return responses.TodoDto{}, err
 	}

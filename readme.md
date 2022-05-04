@@ -36,23 +36,16 @@ Endpoints return the JSON representation of the resources created or edited. How
 
 ## Get Todo
 
-Request for creating todo
+Request for getting todo
 
 ```http
-GET /api/todo
+GET /api/todo/:id
 ```
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `id` | `string` | **Required**. Title id |
 
-Example
-
-```javascript
-{
-    "id":string,
-}
-```
 
 ### Responses
 
